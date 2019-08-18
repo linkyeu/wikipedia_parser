@@ -18,7 +18,7 @@ parser.add_argument('--threads', default=10, help="Number of processing involved
 
 
 class WikiParser():
-    """Data parser from wikipedia.org. For now only works with Russin language. 
+    """Data parser from wikipedia.org. Works with russian and english languages. 
     Parse all profiles from `Category X` wikipedia.org page. This class is for 
     terminal usage.
     Class gives you option for parsing any information you want. So you need to
@@ -33,10 +33,15 @@ class WikiParser():
         category (str): name of category.
     """
     
+    # func for deriving language from URL   
+    lang = staticmethod(lambda x: x.split('.')[0].split('//')[-1])
+    
     def __init__(self, category_url, category, threads=10):
         self.category = category
         self.threads = threads
         self.category_url = category_url
+        self.lang = WikiParser.lang(self.category_url)   # derive language from input URL
+        self.PREFIX = 'https://ru.wikipedia.org/' if self.lang=='ru' else 'https://en.wikipedia.org/'
         
     def __call__(self):
         # get profiles from all pages of category
@@ -111,10 +116,10 @@ class WikiParser():
             html = BeautifulSoup(urllib.request.urlopen(url), 'lxml')
             container = html.find_all('div', {'id' : 'mw-pages'})
             container = BeautifulSoup(str(container), 'lxml')
-            if bool(container.find('a', text='Следующая страница')):  # for Eng should be updated
-                link_to_next_page = container.find('a', text='Следующая страница')['href']
-                PREFIX = 'https://ru.wikipedia.org/'
-                link_to_next_page = PREFIX + link_to_next_page
+            next_page_text = 'next page' if self.lang=='en' else 'Следующая страница'
+            if bool(container.find('a', text=next_page_text)):  # for Eng should be updated
+                link_to_next_page = container.find('a', text=next_page_text)['href']
+                link_to_next_page = self.PREFIX + link_to_next_page
                 result.append(link_to_next_page)
                 url = link_to_next_page
             else:
@@ -143,7 +148,7 @@ class WikiParser():
         for url in urls:                         # loop over all links to parse names and urls
             url = BeautifulSoup(str(url), 'lxml')
             name = url.string
-            url_for_name = 'https://ru.wikipedia.org' + str(url.find('a').attrs['href'])
+            url_for_name = self.PREFIX + str(url.find('a').attrs['href'])
             names_and_urls.append((name, url_for_name))
         return names_and_urls
     
