@@ -1,7 +1,7 @@
 # Parser for wikipedia.org 
 __Currently this version supports only russian languge wikipedia.__</br>
 I wrote this parser as part of my Career Guidence pet-project to collect open source data (wikipedia.org in this particular case).
-This parser designed in way that anyone be able to extend it functionality by redefining `parse_func` method. More detailes in the following description. </br>
+This parser designed in way that anyone be able to extend it functionality by redefining `parse_func` method. More details in the following description. </br>
 
 Parser works with wikipedia categories pages. If you interseted in data about `famous teachers` you are googling `wiki science teachers category` after that google will return you a link to this [category](https://en.wikipedia.org/wiki/Category:Science_teachers). Usually it contains alphabetic list of all profiles of persons within this category. Using this parser tou can parse any data you need from these profiles.
 
