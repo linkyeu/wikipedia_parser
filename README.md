@@ -3,14 +3,12 @@ __Currently this version supports only russian languge wikipedia.__</br>
 I wrote this parser as part of my Career Guidence pet-project to collect open source data (wikipedia.org in this particular case).
 This parser designed in way that anyone be able to extend it functionality by redefining `parse_func` method. More details in the following description. </br>
 
-Parser works with wikipedia categories pages. If you interseted in data about `famous teachers` you are googling `wiki science teachers category` after that google will return you a link to this [category](https://en.wikipedia.org/wiki/Category:Science_teachers). Usually it contains alphabetic list of all profiles of persons within this category. Using this parser tou can parse any data you need from these profiles.
+Parser works with wikipedia categories pages. For example if you interseted in data about `famous teachers` you are googling `wiki science teachers category` after that google will return you a link to this [category](https://en.wikipedia.org/wiki/Category:Science_teachers). Usually it contains alphabetic list of profiles of persons owned by this category. Using this parser you can parse any data you need from these profiles.
 
 ### Use case - parsing birth days of serial killers
 1) Get url for category page with structure `https://en.wikipedia.org/wiki/Category:x...x`. </br>
-Such urls mean that page contains profiles with persons from some category. To get this url you can just google something like `вики категория серийные убийцы` and google gives you `https://en.wikipedia.org/wiki/Category:Serial_killers`. 
-2) Define a `parse_func`. This is a empty method in base parser class which should be defined by user. It is defines what data should be parsed from a single personal profile. _TODO: pre-define several default `parse_func` so user can use them by default._
-Here is an example of such function for parsing birth days from a person profile. Parser uses multiprocessing so it is important that types of outputs from a function should be defined directly in the function. 
-
+Such URLs mean that page contains profiles of persons from some category. To get this URL you can just google something like `вики категория серийные убийцы` and google gives you `https://en.wikipedia.org/wiki/Category:Serial_killers`. 
+2) Define a `parse_func`. This is a empty method in base parser class which should be defined by user. It is defines what data should be parsed from a single personal profile. Here is an example of such function for parsing birth days from a person profile. Parser uses multiprocessing so it is important that types of outputs from a function should be defined directly in the function.</br>
 ```
 def parse_bday(x: tuple):
     """Returns name and birth day of a person derived from wikipedia person's profile page.
@@ -37,10 +35,9 @@ def parse_bday(x: tuple):
     # for multiprocessing is very important to directly define type of output vars
     return str(name), str(bday) 
 ```
-__Explanation:__ As you can see the function takes a tuple with predefined structure as input argument. The tuple has a following structure `('Иван Иванов', 'url to his wikipedia profile')`. The purpose of this function is to define how to parse required by user data from personal page. 
+__Explanation:__ As you can see the function takes a tuple with predefined structure as input argument. The tuple has a following structure `('Иван Иванов', 'url to his wikipedia profile')`. The purpose of this function is to define how to parse required by user data from personal page. </br>
 
-3) Run parser - 
-```python wiki_parser.py --category_url='https://en.wikipedia.org/wiki/Category:Serial_killers' --category='serial_killers' --threads=10```</br>
+3) Run parser - ```python wiki_parser.py --category_url='https://en.wikipedia.org/wiki/Category:Serial_killers' --category='serial_killers' --threads=10```</br>
 `--category` all parsed profiles will have category name in output csv file. Just to know what category was parsed.
 `--threads` this var defines how many processes you want to use while parsing. Some categories for example football players containing 30K profiles and it takes a while to parse it.</br>
 __Explanation__: Parser will take defined `parse_func` and using multiprocessing will parse data from each profile in category and __save results in csv file in the current folder__.
