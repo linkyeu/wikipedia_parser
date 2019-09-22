@@ -153,6 +153,26 @@ class WikiParser():
         return names_and_urls
     
     
+def parse_image(x: tuple):
+    """Parse image from person's url.
+    
+    Args:
+        x (str): url to personal profile of a person on wikipedia
+    """
+    
+    name, url = x  # unpack tuple
+    html = BeautifulSoup(urllib.request.urlopen(x), 'lxml')
+    
+    # check it contains photo
+    images = html.find_all('img')
+    img_exist = images[0]['alt'] == 'Фотография' or images[0]['src'].endswith('.jpg')
+    
+    if img_exist:
+        return str(images[0].attrs['src'][2:])
+    else:
+        return str('None')  
+    
+    
 def parse_bday(x: tuple):
     """Returns name and birth day of a person derived from wiki's preson profile page.
     
@@ -171,6 +191,7 @@ def parse_bday(x: tuple):
     # very !!fucking!! important directly define type of vars
     return str(name), str(bday) 
 
+
 if __name__ == '__main__':
     # read args
     args = parser.parse_args()
@@ -183,7 +204,7 @@ if __name__ == '__main__':
     )
     
     # define func for parsing, in this case I want just get birth days
-    parser.parse_func = parse_bday
+    parser.parse_func = parse_image
     
     # run parser
     parser()
