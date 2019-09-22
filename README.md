@@ -45,7 +45,7 @@ __Explanation__: Parser will take defined `parse_func` and using multiprocessing
 ### TODO:
 - support english wikipedia (change prefix) DONE
 - pre-define several methods for `parse_func`
-- add use case with parsing images
+- add use case with parsing images DONE
 
 
 
