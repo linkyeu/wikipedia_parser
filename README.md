@@ -42,7 +42,8 @@ __Explanation:__ As you can see the function takes a tuple with predefined struc
 `--threads` this var defines how many processes you want to use while parsing. Some categories for example football players containing 30K profiles and it takes a while to parse it.</br>
 __Explanation__: Parser will take defined `parse_func` and using multiprocessing will parse data from each profile in category and __save results in csv file in the current folder__.
 
-### Parsing image of a person from category
+### Parsing images from persons in category
+This will parse url for personal images per each person in category, e.g. in category: 'engineers'.
 All as decribed above except `pars_func`:
 
 ```
