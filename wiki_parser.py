@@ -151,7 +151,11 @@ class WikiParser():
             url_for_name = self.PREFIX + str(url.find('a').attrs['href'])
             names_and_urls.append((name, url_for_name))
         return names_and_urls
-    
+        
+
+###################################################################
+##################### PARSING FUNCTIONS ###########################
+###################################################################
     
 def parse_image(x: tuple):
     """Parse image from person's url.
@@ -175,6 +179,24 @@ def parse_image(x: tuple):
         return str(name), str(images[0].attrs['src'][2:])
     else:
         return str(name), str('None')  
+
+
+def parse_blocation(x: tuple):
+    """Parse location of birth if present othervise returns None.
+    
+    Args:
+        x (str): url to personal profile of a person on wikipedia
+    Returns:
+        name (str): the same as output, i.e. just copy. Important should be directly defined as str()
+        location (str): string with birth location
+    """
+    name, url = x  # unpack tuple
+    html = BeautifulSoup(urllib.request.urlopen(url), 'lxml')
+    try:
+        location = html.find_all('span', {'data-wikidata-property-id' : 'P19'})[0].text
+    except AttributeError: 
+        location = None
+    return str(name), str(location) 
     
     
 def parse_bday(x: tuple):
@@ -199,6 +221,36 @@ def parse_bday(x: tuple):
     return str(name), str(bday) 
 
 
+def parse_all(x: tuple):
+    """Combine parsing bday, location and image."""
+
+    name, url = x  # unpack tuple
+    html = BeautifulSoup(urllib.request.urlopen(url), 'lxml') # parse page
+
+    # TODO: rework parse image. It parse only images with jpg and alt==Фотография, 
+    # but there could be other conditions
+    images = html.find_all('img')
+    img_exist = images[0]['alt'] == 'Фотография' or images[0]['src'].endswith('.jpg')
+    face_url = images[0].attrs['src'][2:] if img_exist else 'None'
+
+    # parse location of birth
+    try:
+        location = html.find_all('span', {'data-wikidata-property-id' : 'P19'})[0].text
+    except Exception: 
+        location = 'None'
+
+    # parse bday
+    try:
+        bday = html.find_all('span', {'class' : 'bday'})
+        bday = BeautifulSoup(str(bday), 'lxml')
+        bday = bday.span.string
+    except AttributeError: 
+        bday = 'None'
+
+    return str(name), str(bday), str(location), str(face_url)        
+
+
+
 if __name__ == '__main__':
     # read args
     args = parser.parse_args()
@@ -211,7 +263,7 @@ if __name__ == '__main__':
     )
     
     # define func for parsing, in this case I want just get birth days
-    parser.parse_func = parse_image
+    parser.parse_func = parse_all
     
     # run parser
     parser()
