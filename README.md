@@ -42,6 +42,34 @@ __Explanation:__ As you can see the function takes a tuple with predefined struc
 `--threads` this var defines how many processes you want to use while parsing. Some categories for example football players containing 30K profiles and it takes a while to parse it.</br>
 __Explanation__: Parser will take defined `parse_func` and using multiprocessing will parse data from each profile in category and __save results in csv file in the current folder__.
 
+### Parsing image of a person from category
+All as decribed above except `pars_func`:
+
+```
+def parse_image(x: tuple):
+    """Parse image from person's url.
+    
+    Args:
+        x (tuple): tuple of strings with following structure ('person name', 'url to wiki page')
+
+    Returns:
+        name (str): the same as output, i.e. just copy. Important should be directly defined as str()
+        image (str): string with url to image of a person from wikipedia 
+    """
+    
+    name, url = x  # unpack tuple
+    html = BeautifulSoup(urllib.request.urlopen(url), 'lxml')
+    
+    # check it contains photo
+    images = html.find_all('img')
+    img_exist = images[0]['alt'] == 'Фотография' or images[0]['src'].endswith('.jpg')
+    
+    if img_exist:
+        return str(name), str(images[0].attrs['src'][2:])
+    else:
+        return str(name), str('None')  
+```
+
 ### TODO:
 - support english wikipedia (change prefix) DONE
 - pre-define several methods for `parse_func`
