@@ -157,20 +157,24 @@ def parse_image(x: tuple):
     """Parse image from person's url.
     
     Args:
-        x (str): url to personal profile of a person on wikipedia
+        x (tuple): tuple of strings with following structure ('person name', 'url to wiki page')
+
+    Returns:
+        name (str): the same as output, i.e. just copy. Important should be directly defined as str()
+        image (str): string with url to image of a person from wikipedia 
     """
     
     name, url = x  # unpack tuple
-    html = BeautifulSoup(urllib.request.urlopen(x), 'lxml')
+    html = BeautifulSoup(urllib.request.urlopen(url), 'lxml')
     
     # check it contains photo
     images = html.find_all('img')
     img_exist = images[0]['alt'] == 'Фотография' or images[0]['src'].endswith('.jpg')
     
     if img_exist:
-        return str(images[0].attrs['src'][2:])
+        return str(name), str(images[0].attrs['src'][2:])
     else:
-        return str('None')  
+        return str(name), str('None')  
     
     
 def parse_bday(x: tuple):
@@ -178,6 +182,9 @@ def parse_bday(x: tuple):
     
     Args:
         x (str): url to personal profile of a person on wikipedia
+    Returns:
+        name (str): the same as output, i.e. just copy. Important should be directly defined as str()
+        image (str): string with date of birthday
     """
     name, url = x  # unpack tuple
     html = BeautifulSoup(urllib.request.urlopen(url), 'lxml')
