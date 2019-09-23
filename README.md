@@ -42,7 +42,7 @@ __Explanation:__ As you can see the function takes a tuple with predefined struc
 `--threads` this var defines how many processes you want to use while parsing. Some categories for example football players containing 30K profiles and it takes a while to parse it.</br>
 __Explanation__: Parser will take defined `parse_func` and using multiprocessing will parse data from each profile in category and __save results in csv file in the current folder__.
 
-### Parsing images from persons in category
+### Use case - Parsing images from persons in category
 This will parse url for personal images per each person in category, e.g. in category: 'engineers'.
 All as decribed above except `pars_func`:
 
@@ -70,6 +70,48 @@ def parse_image(x: tuple):
     else:
         return str(name), str('None')  
 ```
+### Parsing several categories in a row
+Currently I'm parsing a list of profession's categories from Jupyter Notebook using `wiki_parser.py` script in a loop. It will iteratively return professionX.csv profession by profession. A list of professions should dict. Please see example below:
+```
+from wiki_parser import *
+
+professions_url =  {
+                    'mechanics': 'url_to_wiki_category_mechanics',
+                    'engineers': 'url_to_wiki_category_engineers',
+                    }
+                    
+# run wikiparser in a loop for a list of professions                    
+for i in professions_url.items():
+        category_name = i[0]
+        category_url  = i[1]
+        parser = WikiParser(
+            category_url = category_url, 
+            category = category_name, 
+            threads  = 8,
+            )      
+    
+        # define func for parsing, in this case I want just get birth days
+        parser.parse_func = parse_all
+    
+        # run parser
+        parser()
+        del parser
+```
+But for now there is a bug that you cann't run all professions in a row since multiprocessing module gives an error:
+`MaybeEncodingError: Error sending result: '<multiprocessing.pool.ExceptionWithTraceback object at 0x7f9e7bd86b90>'. Reason: 'TypeError("cannot serialize '_io.BufferedReader' object")'`
+So when it gives an error you need to Restart kernel and run from point you stopped by commenting professions in dict which  already parsed. As output you will receive:
+```
+├── script_folder               
+│   ├── professionA.csv       
+│   ├── ...
+|   ├── professionN.csv
+|   ├── requirements.txt
+|   ├── README.md
+│   └── wiki_parser.py  
+```
+
+
+
 
 ### TODO:
 - support english wikipedia (change prefix) DONE
