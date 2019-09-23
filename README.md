@@ -98,7 +98,7 @@ for i in professions_url.items():
         del parser
 ```
 But for now there is a bug that you cann't run all professions in a row since multiprocessing module gives an error:
-`MaybeEncodingError: Error sending result: '<multiprocessing.pool.ExceptionWithTraceback object at 0x7f9e7bd86b90>'. Reason: 'TypeError("cannot serialize '_io.BufferedReader' object")'`
+`MaybeEncodingError: Error sending result: '<multiprocessing.pool.ExceptionWithTraceback object at 0x7f9e7bd86b90>'. Reason: 'TypeError("cannot serialize '_io.BufferedReader' object")`</br>
 So when it gives an error you need to Restart kernel and run from point you stopped by commenting professions in dict which  already parsed. As output you will receive:
 ```
 ├── script_folder               
@@ -111,12 +111,11 @@ So when it gives an error you need to Restart kernel and run from point you stop
 ```
 
 
-
-
 ### TODO:
 - support english wikipedia (change prefix) DONE
-- pre-define several methods for `parse_func`
+- pre-define several methods for `parse_func` DONE
 - add use case with parsing images DONE
+- rework function for parsing image and from ENG wikipedia
 
 
 
