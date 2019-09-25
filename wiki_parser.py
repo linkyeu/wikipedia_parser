@@ -9,6 +9,7 @@ import urllib
 import tqdm
 import multiprocessing
 import argparse
+import pdb
 
 # parse input data
 parser = argparse.ArgumentParser()
@@ -16,6 +17,7 @@ parser.add_argument('--category_url', default=None, help="Copy and paste url for
 parser.add_argument('--category', default='serial_killers', help="Name of parsing wiki-category")
 parser.add_argument('--threads', default=10, help="Number of processing involved for parsing.")
 
+PREFIX = 'https://ru.wikipedia.org'
 
 class WikiParser():
     """Data parser from wikipedia.org. Works with russian and english languages. 
@@ -36,9 +38,10 @@ class WikiParser():
     # func for deriving language from URL   
     lang = staticmethod(lambda x: x.split('.')[0].split('//')[-1])
     
-    def __init__(self, category_url, category, threads=10):
+    def __init__(self, category_url, category, multiprocessing=True, threads=10):
         self.category = category
         self.threads = threads
+        self.multiprocessing = multiprocessing
         self.category_url = category_url
         self.lang = WikiParser.lang(self.category_url)   # derive language from input URL
         self.PREFIX = 'https://ru.wikipedia.org/' if self.lang=='ru' else 'https://en.wikipedia.org/'
@@ -48,15 +51,23 @@ class WikiParser():
         self.profiles_from_cat = self.parse_profiles_in_cat()
         assert len(self.profiles_from_cat) > 0, "Nothing to parse! Give me really big data!"
         
-        # run data parsing process from each profile in category with multiprocessing
-        with multiprocessing.Pool(processes=self.threads) as p:
-            parsed_data = p.map(func=self.parse_func, iterable=tqdm.tqdm(self.profiles_from_cat))
+        if self.multiprocessing:
+            # run data parsing process from each profile in category with multiprocessing
+            with multiprocessing.Pool(processes=self.threads) as p:
+                parsed_data = p.map(func=self.parse_func, iterable=tqdm.tqdm(self.profiles_from_cat))
+            print('Multiprocessing returned data.')
+        else:
+            # useful for debugging
+            parsed_data = map(self.parse_func, tqdm.tqdm(self.profiles_from_cat))
         
         # convert to csv
         df = pd.DataFrame(data=parsed_data)
         df['category'] = self.category
         df.to_csv(f'{self.category}.csv')
         print(f' `{self.category}.csv` dataframe saved to the current folder.')
+
+        del df
+        del parsed_data
             
     def parse_profiles_in_cat(self):
         """Method parses urls of all pages in category. Than parses all profiles from all
@@ -179,24 +190,6 @@ def parse_image(x: tuple):
         return str(name), str(images[0].attrs['src'][2:])
     else:
         return str(name), str('None')  
-
-
-def parse_blocation(x: tuple):
-    """Parse location of birth if present othervise returns None.
-    
-    Args:
-        x (str): url to personal profile of a person on wikipedia
-    Returns:
-        name (str): the same as output, i.e. just copy. Important should be directly defined as str()
-        location (str): string with birth location
-    """
-    name, url = x  # unpack tuple
-    html = BeautifulSoup(urllib.request.urlopen(url), 'lxml')
-    try:
-        location = html.find_all('span', {'data-wikidata-property-id' : 'P19'})[0].text
-    except AttributeError: 
-        location = None
-    return str(name), str(location) 
     
     
 def parse_bday(x: tuple):
@@ -210,15 +203,12 @@ def parse_bday(x: tuple):
     """
     name, url = x  # unpack tuple
     html = BeautifulSoup(urllib.request.urlopen(url), 'lxml')
-    try:
-        bday = html.find_all('span', {'class' : 'bday'})
-        bday = BeautifulSoup(str(bday), 'lxml')
-        bday = bday.span.string
-    # handle case when bday is unavailable
-    except AttributeError: 
-        bday = None
-    # very !!fucking!! important directly define type of vars
-    return str(name), str(bday) 
+    bday = None
+    dbay_tag = html.find('span', attrs={'class': 'bday'})
+    # if dbay_tag:
+    #     # bday = BeautifulSoup(str(dbay_tag), 'lxml')
+    #     bday = bday.string    
+    return str(name), str(bday.string) 
 
 
 def parse_all(x: tuple):
@@ -227,28 +217,60 @@ def parse_all(x: tuple):
     name, url = x  # unpack tuple
     html = BeautifulSoup(urllib.request.urlopen(url), 'lxml') # parse page
 
-    # TODO: rework parse image. It parse only images with jpg and alt==Фотография, 
+    # parse image. TODO: It parse only images with jpg and alt==Фотография, 
     # but there could be other conditions
     images = html.find_all('img')
     img_exist = images[0]['alt'] == 'Фотография' or images[0]['src'].endswith('.jpg')
     face_url = images[0].attrs['src'][2:] if img_exist else 'None'
-
-    # parse location of birth
-    try:
-        location = html.find_all('span', {'data-wikidata-property-id' : 'P19'})[0].text
-    except Exception: 
-        location = 'None'
+    # face_url = None  # None only for producers for all other professions work
 
     # parse bday
-    try:
-        bday = html.find_all('span', {'class' : 'bday'})
-        bday = BeautifulSoup(str(bday), 'lxml')
-        bday = bday.span.string
-    except AttributeError: 
-        bday = 'None'
+    birth_date = html.find('span', {'class' : 'bday'})
+    if birth_date: 
+        birth_date = birth_date.string
 
-    return str(name), str(bday), str(location), str(face_url)        
+    # parse location of birth
+    birth_locations, birth_places_urls = None, None
+    latitude, longtitude = None, None
+    if html.find('th', text='Место рождения'):
+        # parse tag with birth place info
+        birth_places_tag = html.find('span', attrs={'data-wikidata-property-id' : 'P19'}) 
+        if not birth_places_tag: 
+            # if no row "Место Рождения" than return
+            return str(name), str(birth_date), str(birth_locations), str(face_url), str(url), str(latitude), str(longtitude)       
 
+        birth_locations  = birth_places_tag.text
+
+        # if locations don't have url then go out
+        birth_places_urls = birth_places_tag.find_all(['a', 'class'])
+        if len(birth_places_urls) == 0 or None in birth_places_urls:
+            # no coordinates so write None
+            return str(name), str(birth_date), str(birth_locations), str(face_url), str(url), str(latitude), str(longtitude)       
+        
+        birth_places_urls = list(map(lambda x: PREFIX+x['href'] if 'class' in x.attrs else PREFIX+x.attrs['href']  if 'href' in x.attrs else PREFIX+x.attrs['href'], birth_places_urls))
+        birth_places_urls = [i for i in birth_places_urls if len(i.split(':')) == 2]  # filter invalid urls
+        
+        # parse coordinates
+        for place in birth_places_urls:
+            # here check that url is valid
+            html = BeautifulSoup(urllib.request.urlopen(place), 'lxml')
+
+            # handle when coordinates in table
+            if html.find('span', text=re.compile(r'с. ш.')) and html.find('span', text=re.compile(r'з. д.')):
+                latitude   = html.find('span', text=re.compile(r'с. ш.')).text
+                longtitude = html.find('span', text=re.compile(r'з. д.')).text
+            # handle when coordinates above the table
+            elif html.find('a', attrs={'data-lat': re.compile('.')}):
+                latitude = html.find('a', attrs={'data-lat': re.compile('.')})['data-lat']
+                longtitude = html.find('a', attrs={'data-lat': re.compile('.')})['data-lon']
+            else:
+                pass
+            
+            # break the loop if coords received
+            if (latitude and longtitude) != None:
+                break 
+
+    return str(name), str(birth_date), str(birth_locations), str(face_url), str(url), str(latitude), str(longtitude)       
 
 
 if __name__ == '__main__':
