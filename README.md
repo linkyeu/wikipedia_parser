@@ -8,6 +8,8 @@ Parser works with wikipedia categories pages. For example if you interseted in d
 ### Use case - parsing birth days of serial killers
 1) __Get URL for category page__ with structure `https://en.wikipedia.org/wiki/Category:x...x`.</br>
 Such URLs mean that page contains profiles of persons from some category. To get this URL you can just google something like `wiki category serial killers` and google gives you `https://en.wikipedia.org/wiki/Category:Serial_killers`. 
+__Important: url should be full version not shortened. If link is shortened the parser will not work.__
+
 2) __Define a__ `parse_func`. This is a empty method in base parser class which should be defined by user. It is defines what data should be parsed from a single personal profile. Here is an example of such function for parsing birth days from a person profile. Parser uses multiprocessing so it is important that types of outputs from a function should be defined directly in the function.</br>
 ```
 def parse_bday(x: tuple):
